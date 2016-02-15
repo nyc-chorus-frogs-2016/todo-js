@@ -1,3 +1,8 @@
+/*
+   For this morning we are not going to worry about 
+   namespacing or separate files or any of that shizzle.
+   Normally we would of course.
+*/
 function Task(args) {
   args = args || {};
   this.description = args.description;
