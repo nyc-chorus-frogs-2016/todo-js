@@ -5,16 +5,50 @@
 */
 function Task(args) {
   args = args || {};
-  this.description = args.description;
-  this.done = args.done;
-  this.dueDate = args.dueDate;
+  Object.assign(this, args);
 }
 
 Task.prototype.minutesTillDue = function() {
-  var dueMs = this.dueDate.getTime();
-  var nowMs = new Date().getTime();
-  var diff = dueMs - nowMs;
-  return diff / 1000 / 60;
+  if (this.dueDate) {
+    var dueMs = this.dueDate.getTime();
+    var nowMs = new Date().getTime();
+    var diff = dueMs - nowMs;
+    return diff / 1000 / 60;
+  } else {
+    return 0;
+  }
+};
+
+Task.all = function() {
+  return $.ajax({
+    url: 'http://localhost:3000/tasks'
+  }).then(function(response) {
+    return response.map(function(item){
+      return new Task(item);
+    });
+  });
+};
+
+Task.create = function(task) {
+  return $.ajax({
+    url: 'http://localhost:3000/tasks',
+    method: 'POST',
+    data: {
+      description: task.description,
+      dueDate: task.dueDate,
+      done: task.done || false
+    },
+    dataType: 'json'
+  }).then(function(response){
+     return new Task(response);
+  });
+};
+
+Task.prototype.destroy = function() {
+  return $.ajax({
+    url: 'http://localhost:3000/tasks/' + this.id,
+    method: 'DELETE'
+  });
 };
 
 function TodoList(tasks) {
@@ -31,6 +65,13 @@ TodoList.prototype.removeTask = function(task) {
   });
 };
 
+TodoList.prototype.findTaskById = function(id) {
+  var matches = this.tasks.filter(function(task){
+    return task.id == id;
+  });
+  return matches.length ? matches[0] : undefined;
+};
+
 function View() {
   this.displayElement = document.getElementById('todo-list');
   this.button = document.getElementById('save-todo');
@@ -44,6 +85,11 @@ View.prototype.setupEventHandling = function() {
     console.log(this);
     this.ctrl.addTask(this.input.value);
   }.bind(this));
+
+  $(document).on('click', '.delete', function(event){
+    var id = event.target.dataset.id;
+    this.ctrl.deleteTask(id);
+  }.bind(this));
 };
 
 View.prototype.drawTodoList = function(todoList) {
@@ -52,7 +98,8 @@ View.prototype.drawTodoList = function(todoList) {
     html += '<li>' + task.description ;
     html += '<input type="checkbox" '   + (task.done ? ' checked ' : '') +  ' /> ';
     html += 'due at  ' + moment(task.dueDate).fromNow();
-    html += '</li>';
+    html += '<button class="delete" data-id="' + task.id + '"' + ' data-blah="x">Delete</button>';
+    html += ' </li>';
   });
   html += '</ul>';
   this.displayElement.innerHTML = html;
@@ -64,9 +111,36 @@ function Controller(todoList, view) {
 }
 
 Controller.prototype.addTask = function(description) {
-  var newTask = new Task({description: description});
-  this.todoList.addTask(newTask);
-  this.view.drawTodoList(this.todoList);
+  console.log('controller add task called');
+  var inFiveHours = new Date( new Date().getTime() + 5 * 60 * 60 * 1000  );
+  var newTask = new Task({description: description, dueDate: inFiveHours.toISOString()});
+  var dfd = Task.create(newTask);
+  dfd.then(function(savedTask) {
+    this.todoList.addTask(savedTask);
+    console.log('saved', savedTask);
+    this.view.drawTodoList(this.todoList);
+  }.bind(this));
+};
+
+Controller.prototype.deleteTask = function(id) {
+  console.log('deleting', id);
+  var task = this.todoList.findTaskById(id);
+  console.log('task', task);
+  if (task) {
+    console.log(task);
+    task.destroy().then(function(){
+      this.todoList.removeTask(task);
+      this.view.drawTodoList(this.todoList);
+    }.bind(this));
+  }
+};
+
+Controller.prototype.index = function() {
+  Task.all().then(function(arrayOfTasks) {
+    console.log(this);
+    this.todoList.tasks = arrayOfTasks;
+    this.view.drawTodoList(this.todoList);
+  }.bind());
 };
 
 // Our document ready just sets up our components
@@ -75,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function(){
   view = new View();
   ctrl = new Controller(todoList, view);
   view.ctrl = ctrl;
-  view.drawTodoList(todoList);
+  ctrl.index();
 });
 
 
