@@ -19,7 +19,6 @@ var TaskList = React.createClass({
     }.bind(this));
   },
   delTask: function(id) {
-    console.log('del task called with', arguments);
     Task.delete(id).then(function() {
       this.loadCurrentTasks();
     }.bind(this));
