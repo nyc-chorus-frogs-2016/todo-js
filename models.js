@@ -39,11 +39,16 @@ Task.create = function(task) {
   });
 };
 
-Task.prototype.destroy = function() {
+Task.delete = function(id) {
   return $.ajax({
-    url: 'http://localhost:3000/tasks/' + this.id,
+    url: 'http://localhost:3000/tasks/' + id,
     method: 'DELETE'
   });
+
+}
+
+Task.prototype.destroy = function() {
+  return Task.delete(this.id);
 };
 
 function TodoList(tasks) {
