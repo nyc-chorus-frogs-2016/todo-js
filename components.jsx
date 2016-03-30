@@ -2,12 +2,12 @@ var SingleTask = React.createClass({
  render: function() {
    var t = this.props.task;
    return(
-    <li>
-      {t.description}
-      <input type="checkbox" />
-      {moment(t.dueDate).fromNow()}
-      <button onClick={this.props.deleteTask}>Delete</button>
-    </li>
+    <tr>
+      <td>{t.description}</td>
+      <td><input type="checkbox" /></td>
+      <td>{moment(t.dueDate).fromNow()}</td>
+      <td><button onClick={this.props.deleteTask}>Delete</button></td>
+    </tr>
     );
  }
 });
@@ -38,7 +38,16 @@ var TaskList = React.createClass({
     }.bind(this));
     this.state
     return (
-      <div>{rows}</div>
+      <div><table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Done?</th>
+          <th>Due</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>{rows}</tbody></table></div>
     );
   }
 });
