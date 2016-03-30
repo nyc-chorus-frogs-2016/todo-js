@@ -1,6 +1,7 @@
 function Task(args) {
   args = args || {};
   Object.assign(this, args);
+  this.dueDate = new Date(this.due_at);
 }
 
 Task.prototype.minutesTillDue = function() {
